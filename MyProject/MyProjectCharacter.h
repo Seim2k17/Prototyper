@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CharacterBase.h"
 #include "MyProjectCharacter.generated.h"
 
 UCLASS(config=Game)
-class AMyProjectCharacter : public ACharacter
+class AMyProjectCharacter : public ACharacterBase
 {
 	GENERATED_BODY()
 

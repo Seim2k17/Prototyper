@@ -9,6 +9,7 @@
 
 
 class UStaticMeshComponent;
+class USceneComponent;
 class UBoxComponent;
 class USphereComponent;
 class UCapsuleComponent;
@@ -16,6 +17,7 @@ class UShapeComponent;
 class UDamageType;
 class UParticleSystem;
 class USoundBase;
+class ATargetPoint;
 
 UCLASS()
 class MYPROJECT_API AHazardBase : public AActor
@@ -48,7 +50,7 @@ protected:
 	void InitializeHazardVariables();
 
 	/** Play a VFX */
-	void PlaySpecialEffect();
+	void PlaySpecialEffect(AActor* OtherActor);
 
 	/** Play a SFX */
 	void PlaySoundEffect();
@@ -56,42 +58,36 @@ protected:
 	/** Stop the PainCausingSound*/
 	void StopSoundEffect();
 
-	void CheckCustomShapeTrigger();
+	void CheckTrigger();
+
+	void GetHazardImpact(AActor* OtherActor, FVector Impulse);
 
 
 
 	/*Members UFUNCTIONS*/
 	/*------------------*/
-	UFUNCTION()
-		void HandleMeshBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
-
+	
 	UFUNCTION()
 		void HandleTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
 
 	UFUNCTION()
-		void HandleMeshEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	UFUNCTION()
 		void HandleTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
 	
-	//void ChangeTriggerShapeType(ECustomTriggerShapes ShapeType, T<UShapeComponent*> TriggerShape);
+	UFUNCTION()
+		void HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+		
 	/* Member Variables - UPROPERTIES*/
 	/*-------------------------------*/
 
 public:
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
-		UStaticMeshComponent* HazardMesh;
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+// 		UStaticMeshComponent* HazardMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
+		USceneComponent* HazardRoot;
 
-	/* if bUsedCustomTrigger then a custom CustomTrigger is used */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Custom Trigger")
-		bool bUsedCustomTrigger;
-	/*	Select a Custom Shape for Trigger.
-		Please reload Details-View by reselecting the Actor/BP in the WorldOutliner
-	*/
 	/** Whether volume currently causes damage. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
 		bool bPainCausing;
@@ -101,33 +97,56 @@ public:
 	/** If pain causing, time between damage applications. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
 		float PainInterval;
-	/** if bPainCausing, causes pain only once (e.g. explosion*/
+	/** If bPainCausing == true, damage is dealt to the Pawn only once when entering the damage trigger (e.g. explosion) */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
 		bool bPainIsOnce;
-	/** is the Hazard destructible ? */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
-		bool bDestructible;
-	/** is the Hazard destroyed after execution ? */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
-		bool bDestroyActor;
 	/** Type of damage done */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
 		TSubclassOf<UDamageType> DamageType;
-	/** Controller that gets credit for any damage caused by this Actor */
-	UPROPERTY()
-		class AController* DamageInstigator;
-	/** Special FX which plays when Actor enters Hazard*/
+	/** Is the Hazard destructible ? */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hazard")
+		bool bDestructible;
+	/** Is the Hazard destroyed after execution ? */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hazard")
+		bool bDestroyActor;
+	/** Is there a impact when enter the DamageTrigger ?*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hazard")
+		bool bGetImpact;
+	/** How much ?*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hazard")
+		FVector Impact;
+	/** The Collision Preset you need to set to the colliding Components to deal damage (Trigger) */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hazard")
+		FName PresetNameTrigger;
+	/** The Collision Preset you need to set to the colliding Components to deal damage (Solid)*/
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hazard")
+		FName PresetNameSolid;
+	
+	/** Special FX which plays at given location when Pawn enters Hazard*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 		UParticleSystem* HazardFX;
-	/** Sound FX when damaged*/
+	/** If true the FX is spawned at the Location the entered Pawn stands, if false a TargetPoint must be selected */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+		bool bFXSpawnsAtCharLocation;
+	/** Offset to CharacterLocation where the FX is spawned*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+		FVector FXOffset;
+	/** TargetPoint at which the FX is spawned */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+		ATargetPoint* FXLocation;
+	/** 2DSound FX played when Pawn enters Hazard and is damaged*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 		USoundBase* HazardSFX;
+	/** Whether the SoundFX stops playing immediatly when Pawn leaves the Damage Trigger (e.g. looping Sounds)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+		bool bSoundStopsWhenLeaving;
 	/** Reference to SFX above (to destroy it when needed*/
 	UPROPERTY()
 		UAudioComponent*  SFXReference;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Custom Trigger")
-		FName CollisionPresetName;
-
+	/** Controller that gets credit for any damage caused by this Actor */
+	UPROPERTY()
+		class AController* DamageInstigator;
+	
 protected:
 
 	/** Handle for efficient management of OnTimerTick timer */

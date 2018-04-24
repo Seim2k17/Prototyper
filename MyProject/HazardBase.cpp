@@ -2,12 +2,18 @@
 
 #include "HazardBase.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/SceneComponent.h"
 #include "Components/ShapeComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/AudioComponent.h"
+#include "Engine/TargetPoint.h"
+#include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Pawn.h"
+#include "CharacterBase.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values
@@ -17,11 +23,8 @@ AHazardBase::AHazardBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//"CreateDefault" is meant to be used inside constructor function only.
-	HazardMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HazardMesh"));
-	RootComponent = HazardMesh;
-
-	HazardMesh->OnComponentBeginOverlap.AddDynamic(this, &AHazardBase::HandleMeshBeginOverlap);
-	HazardMesh->OnComponentEndOverlap.AddDynamic(this, &AHazardBase::HandleMeshEndOverlap);
+	HazardRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HazardRoot"));
+	RootComponent = HazardRoot;
 
 	InitializeHazardVariables();
 }
@@ -31,12 +34,7 @@ void AHazardBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (bUsedCustomTrigger)
-	{
-		CheckCustomShapeTrigger();
-	}
-	
-	
+	CheckTrigger();
 }
 
 void AHazardBase::CausePainTo(class AActor* Other)
@@ -100,23 +98,48 @@ void AHazardBase::CauseTimerPain(AActor* OtherActor)
 void AHazardBase::InitializeHazardVariables()
 {
 
-	bUsedCustomTrigger = true;
 	bPainCausing = true;
 	DamagePerSec = 5.f;
 	PainInterval = 0.05f;
 	bPainIsOnce = false;
 	bDestroyActor = false;
 	bDestructible = false;
+	bSoundStopsWhenLeaving = false;
+	bFXSpawnsAtCharLocation = false;
+	bGetImpact = false;
+
 	DamageType = UDamageType::StaticClass();
-	CollisionPresetName = "Trigger";
+	PresetNameTrigger = "HazardDamageTrigger";
+	PresetNameSolid = "HazardDamageSolid";
 	
 }
 
-void AHazardBase::PlaySpecialEffect()
+void AHazardBase::PlaySpecialEffect(AActor* OtherActor)
 {
-	if (HazardFX != nullptr)
+	FVector FXTmpLocation;
+	bool bTestFailed;
+
+	if (bFXSpawnsAtCharLocation)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(this, HazardFX, GetActorLocation());
+
+		FXTmpLocation = OtherActor->GetActorLocation() + FXOffset;
+		if (HazardFX == nullptr) bTestFailed = true;
+	}
+	else
+	{
+		if ((FXLocation == nullptr) || (HazardFX == nullptr)) bTestFailed = true;
+		else FXTmpLocation = FXLocation->GetActorLocation();
+		
+	}
+	
+	if (bTestFailed)
+	{
+		//Warning ?
+		//UE_LOG(LogTemp, Warning, TEXT("FX is not played. Please check if a Location and a Particle-system are set."));
+	}
+	else
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(this, HazardFX, FXTmpLocation);
 	}
 }
 
@@ -133,19 +156,17 @@ void AHazardBase::PlaySoundEffect()
 void AHazardBase::StopSoundEffect()
 {
 	UE_LOG(LogTemp, Log, TEXT("SFX DIE !!!"));
-	if (SFXReference)
+	if (SFXReference && bSoundStopsWhenLeaving)
 	{
 		SFXReference->Stop();
 	}
 
 }
 
-void AHazardBase::CheckCustomShapeTrigger()
+void AHazardBase::CheckTrigger()
 {
 	TArray<USceneComponent*> Comps;
-	HazardMesh->GetChildrenComponents(true, Comps);
-
-	uint8 shapeCount = 0;
+	HazardRoot->GetChildrenComponents(true, Comps);
 
 	if (Comps.Num() > 0)
 	{
@@ -155,62 +176,78 @@ void AHazardBase::CheckCustomShapeTrigger()
 			{
 				UPrimitiveComponent* PrimEl = Cast<UPrimitiveComponent>(el);
 				FName ColName = PrimEl->GetCollisionProfileName();
-				if (ColName == CollisionPresetName)
+				
+// 				switch (ColName)
+// 				{
+// 				case PresetNameTrigger:
+// 				case PresetNameSolid:
+// 				}
+				
+				if (ColName == PresetNameTrigger)
 				{
-					++shapeCount;
 					PrimEl->OnComponentBeginOverlap.RemoveAll(this);
 					PrimEl->OnComponentEndOverlap.RemoveAll(this);
 					PrimEl->OnComponentBeginOverlap.AddDynamic(this, &AHazardBase::HandleTriggerBeginOverlap);
 					PrimEl->OnComponentEndOverlap.AddDynamic(this, &AHazardBase::HandleTriggerEndOverlap);
-					UE_LOG(LogTemp, Log, TEXT("TriggerElements: %d %s"), shapeCount, *ColName.ToString());
+				}
+				if (ColName == PresetNameSolid)
+				{
+					PrimEl->OnComponentHit.RemoveAll(this);
+					PrimEl->OnComponentHit.AddDynamic(this, &AHazardBase::HandleSolidHit);
+					
 				}
 			}
 		}
 	}
 }
 
-void AHazardBase::HandleMeshBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
-{
-	UE_LOG(LogTemp, Log, TEXT("MeshCollision entered"));
-	if (!bUsedCustomTrigger)
-	{
-		CauseTimerPain(OtherActor);
-		if (bPainIsOnce)
-		{
-			PlaySpecialEffect();
-		}
-		PlaySoundEffect();
-	}
 
+void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
+{
+	if (bGetImpact)
+	{
+		if (Cast<ACharacterBase>(OtherActor))
+		{
+			UE_LOG(LogTemp, Log, TEXT("It´s a Pawn !"));
+			//Impact only possible on character
+			ACharacterBase* MyChar = Cast<ACharacterBase>(OtherActor);
+			//
+			//MyChar->GetCapsuleComponent()->AddImpulse(Impulse);
+
+			//take a look in the ThirdPersonCharacter BP -> 1:1
+			MyChar->GetCharacterMovement()->DisableMovement();
+			MyChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			MyChar->GetMesh()->SetAllBodiesSimulatePhysics(true);
+			MyChar->GetMesh()->AddImpulse(Impulse);
+
+		}
+		
+	}
 }
 
 void AHazardBase::HandleTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
 	UE_LOG(LogTemp, Log, TEXT("CustomTrigger entered"));
-	if (bUsedCustomTrigger)
-	{
-		CauseTimerPain(OtherActor);
-		if (bPainIsOnce)
-		{
-			PlaySpecialEffect();
-		}
-		PlaySoundEffect();
-	}
-
-}
-
-void AHazardBase::HandleMeshEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	UE_LOG(LogTemp, Log, TEXT("Overlap out (MeshCollision)"));
-	StopSoundEffect();
+	CauseTimerPain(OtherActor);
+	PlaySpecialEffect(OtherActor);
+	PlaySoundEffect();
 }
 
 void AHazardBase::HandleTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	UE_LOG(LogTemp, Log, TEXT("Overlap out (Custom Shape Collision)"));
-	StopSoundEffect();
+	if (bSoundStopsWhenLeaving) StopSoundEffect();
 }
 
+
+void AHazardBase::HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	UE_LOG(LogTemp, Log, TEXT("Solid Hit."));
+	GetHazardImpact(OtherActor, NormalImpulse);
+	CauseTimerPain(OtherActor);
+	PlaySpecialEffect(OtherActor);
+	PlaySoundEffect();
+}
 
 // Called every frame
 void AHazardBase::Tick(float DeltaTime)

@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "CharacterBase.generated.h"
 
+
+class UHealthComponent;
+
 UCLASS()
 class MYPROJECT_API ACharacterBase : public ACharacter
 {
@@ -26,6 +29,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 

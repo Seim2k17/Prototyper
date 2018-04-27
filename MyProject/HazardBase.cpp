@@ -218,6 +218,7 @@ void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
 			MyChar->GetCharacterMovement()->DisableMovement();
 			MyChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			MyChar->GetMesh()->SetAllBodiesSimulatePhysics(true);
+			UE_LOG(LogTemp, Log, TEXT("Impulse: %s"), *Impulse.ToString());
 			MyChar->GetMesh()->AddImpulse(Impulse);
 
 		}
@@ -243,7 +244,7 @@ void AHazardBase::HandleTriggerEndOverlap(UPrimitiveComponent* OverlappedCompone
 void AHazardBase::HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	UE_LOG(LogTemp, Log, TEXT("Solid Hit."));
-	GetHazardImpact(OtherActor, NormalImpulse);
+	GetHazardImpact(OtherActor, Impact);
 	CauseTimerPain(OtherActor);
 	PlaySpecialEffect(OtherActor);
 	PlaySoundEffect();

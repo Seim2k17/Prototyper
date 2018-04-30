@@ -19,6 +19,8 @@ class UParticleSystem;
 class USoundBase;
 class ATargetPoint;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTriggerFromHazardSignature);
+
 UCLASS()
 class MYPROJECT_API AHazardBase : public AActor
 {
@@ -62,6 +64,8 @@ protected:
 
 	void GetHazardImpact(AActor* OtherActor, FVector Impulse);
 
+	void TriggerEventTimer();
+
 
 
 	/*Members UFUNCTIONS*/
@@ -72,6 +76,12 @@ protected:
 
 	UFUNCTION()
 		void HandleTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+	UFUNCTION()
+		void HandleTimedTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	UFUNCTION()
+		void HandleTimedTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
 	UFUNCTION()
 		void HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
@@ -146,11 +156,26 @@ public:
 	/** Controller that gets credit for any damage caused by this Actor */
 	UPROPERTY()
 		class AController* DamageInstigator;
-	
+	/** Sets the time in ms ([0..180k]) until the Event OnTriggerFromHazard is fired which can be implemented in Blueprint */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "180000"))
+		float TimeToTrigger;
+	/** Repeating the Trigger ?*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0", ClampMax = "100"))
+		uint8 Loops;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Activation")
+		FName PresetNameTimedTrigger;
+		
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+		FOnTriggerFromHazardSignature OnTriggerFromHazard;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation")
+		TArray<USkeletalMeshComponent*> ExecutionArray;
+
 protected:
 
 	/** Handle for efficient management of OnTimerTick timer */
 	FTimerHandle TimerHandle_PainTimer;
 
+	FTimerHandle TimerHandle_TriggerEventTimer;
 			
 };

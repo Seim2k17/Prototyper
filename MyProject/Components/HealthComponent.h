@@ -9,6 +9,8 @@
 //very own custom Event, available in Blueprint !
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_SixParams(FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, Damage, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnBeginReadySignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterDiedSignature);
+
 UCLASS( ClassGroup=(ImShaPrototype), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UHealthComponent : public UActorComponent
 {
@@ -31,6 +33,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnBeginReadySignature OnBeginReady;
 
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnCharacterDiedSignature OnCharacterDied;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -38,6 +43,9 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Character")
 	float Health;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character")
+	bool bIsDead;
+
 	UFUNCTION()
 	void HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 

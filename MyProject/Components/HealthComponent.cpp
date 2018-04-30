@@ -12,7 +12,7 @@ UHealthComponent::UHealthComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	//DefaultHealth= 100.f;
-	
+
 }
 
 //** ONLY FOR DEBUG OUTPUT REASON can be removed later*/
@@ -50,20 +50,30 @@ void UHealthComponent::BeginPlay()
 void UHealthComponent::HandleTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, 
 	class AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (Damage <= 0.0f)
+	if (!bIsDead) 
 	{
-		return;
+		if (Damage <= 0.0f)
+		{
+			return;
+		}
+
+		Health = FMath::Clamp(Health - Damage, 0.0f, DefaultHealth);
+
+		UE_LOG(LogTemp, Log, TEXT("Character took %s damage. Current Health: %s"), *FString::SanitizeFloat(Damage), *FString::SanitizeFloat(Health));
+		
+		if (Health <= 0.0f)
+		{
+			bIsDead = true;
+			OnCharacterDied.Broadcast();
+		}
+		
+
+		//ToDo: react different to different DamageTypes ? or completely leave it to Blueprint?
+
+		//FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, Damage, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser
+		OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
+
 	}
-
-	Health = FMath::Clamp(Health - Damage, 0.0f, DefaultHealth);
-
-	UE_LOG(LogTemp, Log, TEXT("Character took %s damage. Current Health: %s"),*FString::SanitizeFloat(Damage), *FString::SanitizeFloat(Health));
-
-
-	//ToDo: react different to different DamageTypes ? or completely leave it to Blueprint?
-
-	//FOnHealthChangedSignature, UHealthComponent*, HealthComp, float, Health, float, Damage, const class UDamageType*, DamageType, class AController*, InstigatedBy, AActor*, DamageCauser
-	OnHealthChanged.Broadcast(this, Health, Damage, DamageType, InstigatedBy, DamageCauser);
-
+	
 }
 

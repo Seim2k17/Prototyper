@@ -29,12 +29,42 @@ AHazardBase::AHazardBase()
 	InitializeHazardVariables();
 }
 
+void AHazardBase::InitializeHazardVariables()
+{
+
+	bPainCausing = true;
+	DamagePerSec = 5.f;
+	PainInterval = 0.05f;
+	bPainIsOnce = false;
+	bDestroyActor = false;
+	bDestructible = false;
+	bSoundStopsWhenLeaving = false;
+	bFXSpawnsAtCharLocation = false;
+	bGetImpact = false;
+
+	DamageType = UDamageType::StaticClass();
+	PresetNameTrigger = "HazardDamageTrigger";
+	PresetNameSolid = "HazardDamageSolid";
+	TimeToTrigger = 0.f;
+
+	PresetNameTimedTrigger = "HazardTimedTrigger";
+
+}
+
 // Called when the game starts or when spawned
 void AHazardBase::BeginPlay()
 {
 	Super::BeginPlay();
 
 	CheckTrigger();
+
+}
+
+// Called every frame
+void AHazardBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
 }
 
 void AHazardBase::CausePainTo(class AActor* Other)
@@ -93,25 +123,6 @@ void AHazardBase::CauseTimerPain(AActor* OtherActor)
 			GetWorldTimerManager().SetTimer(TimerHandle_PainTimer, this, &AHazardBase::PainTimer, PainInterval, true);
 		}
 	}
-}
-
-void AHazardBase::InitializeHazardVariables()
-{
-
-	bPainCausing = true;
-	DamagePerSec = 5.f;
-	PainInterval = 0.05f;
-	bPainIsOnce = false;
-	bDestroyActor = false;
-	bDestructible = false;
-	bSoundStopsWhenLeaving = false;
-	bFXSpawnsAtCharLocation = false;
-	bGetImpact = false;
-
-	DamageType = UDamageType::StaticClass();
-	PresetNameTrigger = "HazardDamageTrigger";
-	PresetNameSolid = "HazardDamageSolid";
-	
 }
 
 void AHazardBase::PlaySpecialEffect(AActor* OtherActor)
@@ -196,6 +207,14 @@ void AHazardBase::CheckTrigger()
 					PrimEl->OnComponentHit.AddDynamic(this, &AHazardBase::HandleSolidHit);
 					
 				}
+				if (ColName == PresetNameTimedTrigger)
+				{
+					PrimEl->OnComponentBeginOverlap.RemoveAll(this);
+					PrimEl->OnComponentEndOverlap.RemoveAll(this);
+					PrimEl->OnComponentBeginOverlap.AddDynamic(this, &AHazardBase::HandleTimedTriggerBeginOverlap);
+					PrimEl->OnComponentEndOverlap.AddDynamic(this, &AHazardBase::HandleTimedTriggerEndOverlap);
+
+				}
 			}
 		}
 	}
@@ -226,12 +245,28 @@ void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
 	}
 }
 
+void AHazardBase::TriggerEventTimer()
+{
+	if (Loops > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AN EVENT OCCURED !: %s .time"),*FString::FromInt(Loops));
+		OnTriggerFromHazard.Broadcast();
+		--Loops;
+		return;
+	}
+	GetWorldTimerManager().ClearTimer(TimerHandle_TriggerEventTimer);
+
+}
+
 void AHazardBase::HandleTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	UE_LOG(LogTemp, Log, TEXT("CustomTrigger entered"));
-	CauseTimerPain(OtherActor);
-	PlaySpecialEffect(OtherActor);
-	PlaySoundEffect();
+	if (bPainCausing)
+	{
+		UE_LOG(LogTemp, Log, TEXT("CustomTrigger entered"));
+		CauseTimerPain(OtherActor);
+		PlaySpecialEffect(OtherActor);
+		PlaySoundEffect();
+	}
 }
 
 void AHazardBase::HandleTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -250,10 +285,15 @@ void AHazardBase::HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* Othe
 	PlaySoundEffect();
 }
 
-// Called every frame
-void AHazardBase::Tick(float DeltaTime)
+void AHazardBase::HandleTimedTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
 {
-	Super::Tick(DeltaTime);
-
+	/** DebugCheck TriggerEvent*/
+	bool bIsLooping = false;
+	if (Loops > 0) bIsLooping = true;
+	GetWorldTimerManager().SetTimer(TimerHandle_TriggerEventTimer, this, &AHazardBase::TriggerEventTimer, (TimeToTrigger / 1000), bIsLooping);
 }
 
+void AHazardBase::HandleTimedTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+
+}

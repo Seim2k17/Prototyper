@@ -51,6 +51,9 @@ protected:
 	/** Initialize Members / States*/
 	void InitializeHazardVariables();
 
+	/** Initialize Members / States*/
+	void InitializeHazardVariablesBeginPlay();
+
 	/** Play a VFX */
 	void PlaySpecialEffect(AActor* OtherActor);
 
@@ -65,6 +68,8 @@ protected:
 	void GetHazardImpact(AActor* OtherActor, FVector Impulse);
 
 	void TriggerEventTimer();
+
+	void ContinueTimer();
 
 
 
@@ -159,8 +164,11 @@ public:
 	/** Sets the time in ms ([0..180k]) until the Event OnTriggerFromHazard is fired which can be implemented in Blueprint */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "180000"))
 		float TimeToTrigger;
+	/** Sets the time between loops [0..10000] ms*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "10000"))
+		float TimeBetweenLoops;
 	/** Repeating the Trigger ?*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0", ClampMax = "100"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "1", ClampMax = "100"))
 		uint8 Loops;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Activation")
 		FName PresetNameTimedTrigger;
@@ -171,11 +179,21 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation")
 		TArray<USkeletalMeshComponent*> ExecutionArray;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation")
+		//TSubclassOf<AActor> DestinationObject;
+		AActor* DestinationObject;
+
 protected:
 
 	/** Handle for efficient management of OnTimerTick timer */
 	FTimerHandle TimerHandle_PainTimer;
 
 	FTimerHandle TimerHandle_TriggerEventTimer;
+
+	FTimerHandle TimerHandle_TimerBtLoops;
+
+private:
+	UPROPERTY()
+	uint8 StartLoops;
 			
 };

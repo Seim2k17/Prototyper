@@ -41,7 +41,7 @@ void AHazardBase::InitializeHazardVariables()
 	bSoundStopsWhenLeaving = false;
 	bFXSpawnsAtCharLocation = false;
 	bGetImpact = false;
-
+		
 	DamageType = UDamageType::StaticClass();
 	PresetNameTrigger = "HazardDamageTrigger";
 	PresetNameSolid = "HazardDamageSolid";
@@ -51,12 +51,17 @@ void AHazardBase::InitializeHazardVariables()
 
 }
 
+void AHazardBase::InitializeHazardVariablesBeginPlay()
+{
+	StartLoops = Loops;
+}
+
 // Called when the game starts or when spawned
 void AHazardBase::BeginPlay()
 {
 	Super::BeginPlay();
-
 	CheckTrigger();
+	InitializeHazardVariablesBeginPlay();
 
 }
 
@@ -247,15 +252,33 @@ void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
 
 void AHazardBase::TriggerEventTimer()
 {
+	
 	if (Loops > 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AN EVENT OCCURED !: %s .time"),*FString::FromInt(Loops));
 		OnTriggerFromHazard.Broadcast();
 		--Loops;
+		if (TimeBetweenLoops > 0.0f)
+		{
+			GetWorldTimerManager().PauseTimer(TimerHandle_TriggerEventTimer);
+			GetWorldTimerManager().SetTimer(TimerHandle_TimerBtLoops, this, &AHazardBase::ContinueTimer, TimeBetweenLoops / 1000, false);
+		}
+		
 		return;
 	}
-	GetWorldTimerManager().ClearTimer(TimerHandle_TriggerEventTimer);
+	else
+	{
+		GetWorldTimerManager().ClearTimer(TimerHandle_TriggerEventTimer);
+		Loops = StartLoops;
+	}
 
+}
+
+void AHazardBase::ContinueTimer()
+{
+	GetWorldTimerManager().ClearTimer(TimerHandle_TimerBtLoops);
+	GetWorldTimerManager().UnPauseTimer(TimerHandle_TriggerEventTimer);
+	UE_LOG(LogTemp, Log, TEXT("HandleTimedTrigger_EventTimer, Loops: %s, StartLoops: %s"), *FString::FromInt(Loops), *FString::FromInt(StartLoops));
 }
 
 void AHazardBase::HandleTriggerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)

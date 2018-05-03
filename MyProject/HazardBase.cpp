@@ -14,6 +14,7 @@
 #include "GameFramework/Pawn.h"
 #include "CharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "TriggeredObjects.h"
 
 
 // Sets default values
@@ -40,7 +41,6 @@ void AHazardBase::InitializeHazardVariables()
 	bDestructible = false;
 	bSoundStopsWhenLeaving = false;
 	bFXSpawnsAtCharLocation = false;
-	bGetImpact = false;
 		
 	DamageType = UDamageType::StaticClass();
 	PresetNameTrigger = "HazardDamageTrigger";
@@ -48,6 +48,8 @@ void AHazardBase::InitializeHazardVariables()
 	TimeToTrigger = 0.f;
 
 	PresetNameTimedTrigger = "HazardTimedTrigger";
+
+	Loops = 1;
 
 }
 
@@ -74,16 +76,19 @@ void AHazardBase::Tick(float DeltaTime)
 
 void AHazardBase::CausePainTo(class AActor* Other)
 {
+	//DONE-START
 	if (DamagePerSec > 0.f)
 	{
 		TSubclassOf<UDamageType> DmgTypeClass = DamageType ? *DamageType : UDamageType::StaticClass();
 		Other->TakeDamage(DamagePerSec*PainInterval, FDamageEvent(DmgTypeClass), DamageInstigator, this);
 	}
+	//DONE-END
 
-	if (bDestroyActor) this->Destroy();
+	if (bDestroyActor) this->Destroy(); //move to HazardBase (if Health=0 and bDestroy -> destroy)
 
 }
 
+//DONE
 void AHazardBase::PainTimer()
 {
 	if (bPainCausing)
@@ -112,6 +117,7 @@ void AHazardBase::PainTimer()
 
 }
 
+//DONE
 void AHazardBase::CauseTimerPain(AActor* OtherActor)
 {
 	//UE_LOG(LogTemp, Log, TEXT("Entered Trigger"));
@@ -228,9 +234,7 @@ void AHazardBase::CheckTrigger()
 
 void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
 {
-	if (bGetImpact)
-	{
-		if (Cast<ACharacterBase>(OtherActor))
+	if (Cast<ACharacterBase>(OtherActor))
 		{
 			UE_LOG(LogTemp, Log, TEXT("It´s a Pawn !"));
 			//Impact only possible on character
@@ -243,11 +247,10 @@ void AHazardBase::GetHazardImpact(AActor* OtherActor, FVector Impulse)
 			MyChar->GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 			MyChar->GetMesh()->SetAllBodiesSimulatePhysics(true);
 			UE_LOG(LogTemp, Log, TEXT("Impulse: %s"), *Impulse.ToString());
+			//"verfeinern" was passiert (use noPhysics)
 			MyChar->GetMesh()->AddImpulse(Impulse);
 
 		}
-		
-	}
 }
 
 void AHazardBase::TriggerEventTimer()
@@ -256,7 +259,8 @@ void AHazardBase::TriggerEventTimer()
 	if (Loops > 0)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AN EVENT OCCURED !: %s .time"),*FString::FromInt(Loops));
-		OnTriggerFromHazard.Broadcast();
+		OnTriggerFromHazard.Broadcast(DestinationObject);
+		if (DestinationObject) DestinationObject->TriggerSomething();
 		--Loops;
 		if (TimeBetweenLoops > 0.0f)
 		{

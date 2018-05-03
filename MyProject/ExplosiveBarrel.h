@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "TriggeredObjects.h"
 #include "ExplosiveBarrel.generated.h"
 
 class USoundBase;
@@ -11,7 +11,7 @@ class UParticleSystem;
 class UStaticMeshComponent;
 
 UCLASS()
-class MYPROJECT_API AExplosiveBarrel : public AActor
+class MYPROJECT_API AExplosiveBarrel : public ATriggeredObjects
 {
 	GENERATED_BODY()
 	
@@ -22,14 +22,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void TriggerSomething() override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components")
-		UStaticMeshComponent* BarrelMesh;
-
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 		UParticleSystem* ExplosiveFX;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
@@ -38,10 +34,11 @@ public:
 		float AmountOfRadialDamage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float DamageRadius;
+	//UPROPERTY(BlueprintAssignable, Category = "TriggeredObjects")
+	UFUNCTION(BlueprintCallable, Category = "TriggeredObjects")
+		void ExplodeAtLocation(FVector FXLocation);
 
-	UFUNCTION(BlueprintCallable, Category = "Barrel")
-	void Explode();
-
+	UPROPERTY()
 	TSubclassOf<UDamageType> DamageClassType;
 	
 };

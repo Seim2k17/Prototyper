@@ -8,17 +8,20 @@
 #include "DrawDebugHelpers.h"
 
 
+static int32 DebugObjectsDrawing = 0;
+FAutoConsoleVariableRef CVARDebugObjectsDrawing(
+	TEXT("IMSHA.DebugObjects"),
+	DebugObjectsDrawing,
+	TEXT("Draw Debug Lines for Objects: 1-DamageSphere"),
+	ECVF_Cheat
+);
+
 // Sets default values
 AExplosiveBarrel::AExplosiveBarrel()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-	BarrelMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BarrelMesh"));
-	RootComponent = BarrelMesh;
-
-	AmountOfRadialDamage = 500.0f;
+ 	AmountOfRadialDamage = 500.0f;
 	DamageRadius = 500.0f;
+	TriggerWhat = "Explode";
 
 }
 
@@ -28,29 +31,29 @@ void AExplosiveBarrel::BeginPlay()
 	Super::BeginPlay();
 }
 
-// Called every frame
-void AExplosiveBarrel::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 
+void AExplosiveBarrel::TriggerSomething()
+{
+	ExplodeAtLocation(GetActorLocation());
 }
 
-void AExplosiveBarrel::Explode()
+void AExplosiveBarrel::ExplodeAtLocation(FVector FXLocation)
 {
 	UE_LOG(LogTemp, Log, TEXT("BARREL EXPLODES"));
 	if (ExplosiveFX)
 	{
-		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosiveFX, GetActorLocation());
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosiveFX, FXLocation);
 	}
 	if (ExplosiveSFX)
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplosiveSFX, GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplosiveSFX, FXLocation);
 	}
 
 	TArray<AActor*> IgnoredActors;
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), AmountOfRadialDamage, GetActorLocation(), DamageRadius, DamageClassType, IgnoredActors, this);
-	DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 12, FColor::Red, false, 1.5f, 0, 5.0f);
-	
-	
+	if (DebugObjectsDrawing == 1)
+	{
+		DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 12, FColor::Red, false, 1.5f, 0, 5.0f);
+	}
 }
 

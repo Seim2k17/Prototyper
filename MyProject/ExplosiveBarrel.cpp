@@ -7,15 +7,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 
-
-static int32 DebugObjectsDrawing = 0;
-FAutoConsoleVariableRef CVARDebugObjectsDrawing(
-	TEXT("IMSHA.DebugObjects"),
-	DebugObjectsDrawing,
-	TEXT("Draw Debug Lines for Objects: 1-DamageSphere"),
-	ECVF_Cheat
-);
-
 // Sets default values
 AExplosiveBarrel::AExplosiveBarrel()
 {
@@ -32,13 +23,16 @@ void AExplosiveBarrel::BeginPlay()
 }
 
 
-void AExplosiveBarrel::TriggerSomething()
+void AExplosiveBarrel::TriggerSthing()
 {
 	ExplodeAtLocation(GetActorLocation());
 }
 
 void AExplosiveBarrel::ExplodeAtLocation(FVector FXLocation)
 {
+	const auto CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("IMSHA.DebugObjects"));
+	int32 DebugObjectsDrawing = CVar->GetInt();
+
 	UE_LOG(LogTemp, Log, TEXT("BARREL EXPLODES"));
 	if (ExplosiveFX)
 	{
@@ -51,8 +45,8 @@ void AExplosiveBarrel::ExplodeAtLocation(FVector FXLocation)
 
 	TArray<AActor*> IgnoredActors;
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), AmountOfRadialDamage, GetActorLocation(), DamageRadius, DamageClassType, IgnoredActors, this);
-	if (DebugObjectsDrawing == 1)
-	{
+ 	if (DebugObjectsDrawing == 1)
+ 	{
 		DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 12, FColor::Red, false, 1.5f, 0, 5.0f);
 	}
 }

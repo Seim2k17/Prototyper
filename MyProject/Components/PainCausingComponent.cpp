@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PainCausingComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values for this component's properties
 UPainCausingComponent::UPainCausingComponent()
@@ -17,7 +19,7 @@ void UPainCausingComponent::InitializeVariables()
 	DamagePerSec = 5.f;
 	PainInterval = 0.05f;
 	bPainIsOnce = false;
-
+	PainCausingType = EPainCausingTypes::JustPain;
 	DamageType = UDamageType::StaticClass();
 }
 
@@ -38,11 +40,16 @@ void UPainCausingComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 void UPainCausingComponent::CausePainTo(class AActor* Other)
 {
+	const auto CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("IMSHA.DebugObjects"));
+	int32 DebugObjectsDrawing = CVar->GetInt();
+
 	if (DamagePerSec > 0.f)
 	{
 		TSubclassOf<UDamageType> DmgTypeClass = DamageType ? *DamageType : UDamageType::StaticClass();
 		Other->TakeDamage(DamagePerSec*PainInterval, FDamageEvent(DmgTypeClass), DamageInstigator, GetOwner());
+		if (DebugObjectsDrawing == 2) DrawDebugString(GetWorld(), GetOwner()->GetActorLocation(), TEXT("OUCH"), NULL, FColor::Red, 2.0f);
 	}
+	//apply other damage types ? PointDamage/RadialDamage -> Once ? -> parameter siehe bp
 
 }
 
@@ -84,4 +91,15 @@ void UPainCausingComponent::CauseTimerPain(AActor* OtherActor)
 			GetOwner()->GetWorldTimerManager().SetTimer(TimerHandle_PainTimer, this, &UPainCausingComponent::PainTimer, PainInterval, true);
 		}
 	}
+}
+
+void UPainCausingComponent::MakeRadialDamage(AActor* OtherActor)
+{
+	const auto CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("IMSHA.DebugObjects"));
+	int32 DebugObjectsDrawing = CVar->GetInt();
+
+	TArray<AActor*> IgnoredActors;
+	AActor* MyOwner = GetOwner();
+	UGameplayStatics::ApplyRadialDamage(GetWorld(), AmountOfRadialDamage, MyOwner->GetActorLocation(), DamageRadius, DamageType, IgnoredActors, MyOwner);
+	if (DebugObjectsDrawing == 1) DrawDebugSphere(GetWorld(), MyOwner->GetActorLocation(), DamageRadius, 12, FColor::Red, false, 1.5f, 0, 1.0f);
 }

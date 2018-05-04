@@ -15,10 +15,11 @@ public:
 	// Sets default values for this actor's properties
 	ATriggeredObjects();
 
+	virtual void TriggerSthing();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 	
 public:	
 
@@ -26,9 +27,5 @@ public:
 		UStaticMeshComponent* MeshComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Hints")
 		FName TriggerWhat;
-
-	UFUNCTION(BlueprintCallable, Category = "TriggeredObjects")
-		virtual void TriggerSomething();
-
 	
 };

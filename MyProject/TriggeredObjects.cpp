@@ -17,8 +17,7 @@ void ATriggeredObjects::BeginPlay()
 
 }
 
-
-void ATriggeredObjects::TriggerSomething()
+void ATriggeredObjects::TriggerSthing()
 {
-	UE_LOG(LogTemp, Log, TEXT("BaseClass Triggered Objects called."));
+
 }

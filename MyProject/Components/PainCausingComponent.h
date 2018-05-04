@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "PainCausingTypes.h"
 #include "PainCausingComponent.generated.h"
 
 class UDamageType;
@@ -24,6 +25,8 @@ public:
 
 	/** Causes Pain in a special Interval*/
 	void CauseTimerPain(AActor* OtherActor);
+
+	void MakeRadialDamage(AActor* OtherActor);
 
 protected:
 	// Called when the game starts
@@ -54,6 +57,15 @@ public:
 	/** Type of damage done */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Pain Causing")
 		TSubclassOf<UDamageType> DamageType;
+	/**How Apply Damage to the Actor ?*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		EPainCausingTypes PainCausingType;
+	/**Damage applied when RadialDamage selected*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float AmountOfRadialDamage;
+	/**Radius of RadialDamage*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
+		float DamageRadius;
 	/** Controller that gets credit for any damage caused by this Actor */
 	UPROPERTY()
 		class AController* DamageInstigator;

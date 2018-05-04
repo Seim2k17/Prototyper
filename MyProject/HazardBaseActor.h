@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "TriggeredObjectBase.h"
 #include "HazardBaseActor.generated.h"
 
 class USceneComponent;
@@ -14,7 +15,7 @@ class ATargetPoint;
 
 
 UCLASS()
-class MYPROJECT_API AHazardBaseActor : public AActor
+class MYPROJECT_API AHazardBaseActor : public ATriggeredObjectBase
 {
 	GENERATED_BODY()
 	
@@ -54,6 +55,7 @@ protected:
 	UFUNCTION()
 		void HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -81,6 +83,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hazard")
 		FVector Impact;
 
+	
 	/** Special FX which plays at given location when Pawn collides with Hazard*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 		UParticleSystem* HazardFX;

@@ -67,9 +67,9 @@ protected:
 	void CheckTrigger();
 	/**DONE*/
 	void GetHazardImpact(AActor* OtherActor, FVector Impulse);
-
+	/**DONE*/
 	void TriggerEventTimer();
-
+	/**DONE*/
 	void ContinueTimer();
 
 

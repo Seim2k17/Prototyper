@@ -136,6 +136,7 @@ void AHazardBase::CauseTimerPain(AActor* OtherActor)
 	}
 }
 
+//done
 void AHazardBase::PlaySpecialEffect(AActor* OtherActor)
 {
 	FVector FXTmpLocation;
@@ -165,6 +166,7 @@ void AHazardBase::PlaySpecialEffect(AActor* OtherActor)
 	}
 }
 
+//done
 void AHazardBase::PlaySoundEffect()
 {
 	if (HazardSFX != nullptr)
@@ -174,7 +176,7 @@ void AHazardBase::PlaySoundEffect()
 	}
 
 }
-
+//done
 void AHazardBase::StopSoundEffect()
 {
 	UE_LOG(LogTemp, Log, TEXT("SFX DIE !!!"));
@@ -185,6 +187,7 @@ void AHazardBase::StopSoundEffect()
 
 }
 
+//done
 void AHazardBase::CheckTrigger()
 {
 	TArray<USceneComponent*> Comps;
@@ -260,7 +263,7 @@ void AHazardBase::TriggerEventTimer()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("AN EVENT OCCURED !: %s .time"),*FString::FromInt(Loops));
 		OnTriggerFromHazard.Broadcast(DestinationObject);
-		if (DestinationObject) DestinationObject->TriggerSomething();
+		if (DestinationObject) DestinationObject->TriggerSthing();
 		--Loops;
 		if (TimeBetweenLoops > 0.0f)
 		{

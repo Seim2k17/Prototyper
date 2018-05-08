@@ -12,6 +12,7 @@ class UDamageType;
 class UParticleSystem;
 class USoundBase;
 class ATargetPoint;
+class UHazardRadialForceComponent;
 
 
 UCLASS()
@@ -54,6 +55,8 @@ protected:
 	
 	UFUNCTION()
 		void HandleSolidHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+
+
 
 	
 public:	
@@ -111,4 +114,7 @@ public:
 	/** Reference to SFX above (to destroy it when needed*/
 	UPROPERTY()
 		UAudioComponent*  SFXReference;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Components")
+		UHazardRadialForceComponent* RadialForce;
 };

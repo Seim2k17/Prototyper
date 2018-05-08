@@ -3,6 +3,8 @@
 #include "PainCausingComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Components/SphereComponent.h"
+#include "PhysicsEngine/RadialForceComponent.h"
 
 // Sets default values for this component's properties
 UPainCausingComponent::UPainCausingComponent()
@@ -21,12 +23,47 @@ void UPainCausingComponent::InitializeVariables()
 	bPainIsOnce = false;
 	PainCausingType = EPainCausingTypes::JustPain;
 	DamageType = UDamageType::StaticClass();
+
 }
+
+#if WITH_EDITOR
+void UPainCausingComponent::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	//PostInitialize Radius
+	if (RadialForceCompReference)
+	{
+		RadialForceCompReference->Radius = DamageRadius;
+	}
+	else {
+		TArray<URadialForceComponent*> RadialComps;
+		GetOwner()->GetComponents<URadialForceComponent>(RadialComps);
+		//only use the first Component
+		if (RadialComps.Num() > 0) {
+			RadialForceCompReference = RadialComps[0];
+			RadialComps[0]->Radius = DamageRadius;
+		}
+	}
+	//UE_LOG(LogTemp, Log, TEXT("Radius: %s"),*FString::SanitizeFloat(DamageRadius));
+}
+#endif
+
+
 
 // Called when the game starts
 void UPainCausingComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//PostInitialize Radius
+	TArray<URadialForceComponent*> RadialComps;
+	GetOwner()->GetComponents<URadialForceComponent>(RadialComps);
+	//only use the first Component
+	if (RadialComps.Num() > 0) {
+		DamageRadius = RadialComps[0]->Radius;
+		//if needed dontknow yet
+	}
 }
 
 // Called every frame
@@ -102,4 +139,9 @@ void UPainCausingComponent::MakeRadialDamage(AActor* OtherActor)
 	AActor* MyOwner = GetOwner();
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), AmountOfRadialDamage, MyOwner->GetActorLocation(), DamageRadius, DamageType, IgnoredActors, MyOwner);
 	if (DebugObjectsDrawing == 1) DrawDebugSphere(GetWorld(), MyOwner->GetActorLocation(), DamageRadius, 12, FColor::Red, false, 1.5f, 0, 1.0f);
+}
+
+void UPainCausingComponent::SetRadius(float radius)
+{
+	DamageRadius = radius;
 }

@@ -8,9 +8,13 @@
 #include "PainCausingComponent.generated.h"
 
 class UDamageType;
+class USphereComponent;
+class URadialForceComponent;
 
-UCLASS( ClassGroup=(ImShaPrototype), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(ImShaPrototype), meta=(BlueprintSpawnableComponent), showcategories = Trigger)
 class MYPROJECT_API UPainCausingComponent : public UActorComponent
+//wanted to visualize DamageRadius like in RadialForceComponent -> usesd the Component and the Radius from it instead
+//class MYPROJECT_API UPainCausingComponent : public USceneComponent
 {
 	GENERATED_BODY()
 
@@ -28,6 +32,8 @@ public:
 
 	void MakeRadialDamage(AActor* OtherActor);
 
+	void SetRadius(float radius);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -40,6 +46,12 @@ protected:
 
 	/**Initialize Variables */
 	void InitializeVariables();
+
+
+
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 
 	/** MEMBER */
 
@@ -60,10 +72,10 @@ public:
 	/**How Apply Damage to the Actor ?*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		EPainCausingTypes PainCausingType;
-	/**Damage applied when RadialDamage selected*/
+	/**used ONLY IF RADIALDAMAGE is selected, Damage applied in certain Radius*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float AmountOfRadialDamage;
-	/**Radius of RadialDamage*/
+	/**used ONLY IF RADIALDAMAGE is selected, also Radius for the RadialForceComponent*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Damage")
 		float DamageRadius;
 	/** Controller that gets credit for any damage caused by this Actor */
@@ -73,6 +85,10 @@ public:
 protected:
 	/** Handle for efficient management of OnTimerTick timer */
 	FTimerHandle TimerHandle_PainTimer;
-		
-	
+
+private:
+
+	UPROPERTY()
+	URadialForceComponent* RadialForceCompReference;
+
 };

@@ -7,6 +7,7 @@
 #include "CharacterBase.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/PainCausingComponent.h"
+#include "Components/HazardRadialForceComponent.h"
 
 
 // Sets default values
@@ -19,6 +20,9 @@ AHazardBaseActor::AHazardBaseActor()
 	HazardRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HazardRoot"));
 	RootComponent = HazardRoot;
 
+	RadialForce = CreateDefaultSubobject<UHazardRadialForceComponent>(TEXT("RadialForce"));
+	RadialForce->SetupAttachment(HazardRoot);
+	
 	InitializeValues();
 }
 
@@ -31,6 +35,13 @@ void AHazardBaseActor::InitializeValues()
 
 	PresetNameTrigger = "HazardDamageTrigger";
 	PresetNameSolid = "HazardDamageSolid";
+
+	//no Pulse at Spawn
+	RadialForce->ImpulseStrength = 0.0f;
+	//does not allow RadialForce to Tick in the firstplace
+	RadialForce->bIsActive = false;
+	RadialForce->bImpulseVelChange = true;
+	RadialForce->bIgnoreOwningActor = true;
 }
 
 // Called when the game starts or when spawned

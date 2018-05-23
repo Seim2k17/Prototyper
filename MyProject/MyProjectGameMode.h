@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "MyProjectGameMode.generated.h"
 
+class UUserWidget;
+
 UCLASS(minimalapi)
 class AMyProjectGameMode : public AGameModeBase
 {
@@ -13,6 +15,22 @@ class AMyProjectGameMode : public AGameModeBase
 
 public:
 	AMyProjectGameMode();
+
+
+	UFUNCTION(BlueprintCallable, Category = Game)
+	virtual void StartPlay() override;
+
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	void ShowInteractionWidget();
+
+	UFUNCTION(BlueprintCallable, Category = "Widget")
+	void HideInteractionWidget();
+
+	UPROPERTY(EditAnywhere, NoClear, BlueprintReadOnly, Category = Classes)
+	TSubclassOf<class UUserWidget> IAWidgetClass;
+
+
+	UUserWidget* InteractionHUD;
 };
 
 

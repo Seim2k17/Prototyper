@@ -9,6 +9,8 @@
 #include "TriggerActor.generated.h"
 
 UCLASS()
+
+//Trigger for Hazards to trigger
 class MYPROJECT_API ATriggerActor : public AActor
 {
 	GENERATED_BODY()
@@ -45,15 +47,15 @@ public:
 		FName PresetNameTimedTrigger;
 
 	/** Sets the time in ms ([0..180k]) until the Event OnTriggerFromHazard is fired which can be implemented in Blueprint */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "180000"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "180000"))
 		float TimeToTrigger;
 
 	/** Sets the time between loops [0..10000] ms*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "10000"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "0.0", ClampMax = "10000"))
 		float TimeBetweenLoops;
 
 	/** Repeating the Trigger ?*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "1", ClampMax = "100"))
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Activation", meta = (ClampMin = "1", ClampMax = "100"))
 		uint8 Loops;
 
 	/**Name of the Trigger / CPP version GD likable ?*/
@@ -63,7 +65,7 @@ public:
 // 	UPROPERTY(BlueprintAssignable, Category = "Events")
 // 		FOnTriggerFromHazardSignature OnTriggerFromHazard;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Activation")
+	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "Activation")
 		ATriggeredObjectBase* DestinationObject;
 
 	

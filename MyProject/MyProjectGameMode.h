@@ -8,6 +8,10 @@
 
 class UUserWidget;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnOverlapPickupSignature, EItems, ItemName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnOverlapHotspotSignature, EInteractibles, HotspotName);
+
+
 UCLASS(minimalapi)
 class AMyProjectGameMode : public AGameModeBase
 {
@@ -31,6 +35,13 @@ public:
 
 
 	UUserWidget* InteractionHUD;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnOverlapPickupSignature OnOverlapItem;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnOverlapHotspotSignature OnOverlapHotspot;
+
 };
 
 

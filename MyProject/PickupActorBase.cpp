@@ -7,6 +7,7 @@
 #include "Engine/DataTable.h"
 #include "MyProjectGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "MyProjectCharacter.h"
 
 
 // Sets default values
@@ -47,10 +48,19 @@ void APickupActorBase::NotifyActorBeginOverlap(AActor* OtherActor)
 	gm->ShowInteractionWidget();
 
 	bInteractionAllowed = true;
+	gm->OnOverlapItem.Broadcast(Itemname);
+
+	//**TMP until better solution is found*
+	AMyProjectCharacter* MyChar = Cast<AMyProjectCharacter>(OtherActor);
+	if (MyChar)
+	{
+		MyChar->CurrentInteractibleReference = this;
+	}
 
 	//Get Data from Datatable (Name,Text:A, Text:B)
 
 	//da InventoryStruct geblueprinted ist und kein CPP Struct -> Set Params via BlueprintFunction im ConstructScript ! --> 
+	//wenn aber später inventory struct gec++ t wird hier Datatable suche ausbauen
 // 	static const FString ContextString(TEXT("i01_Potion_Heal50"));
 // 	ItemDataTableReference->FindRow()
 
@@ -66,7 +76,15 @@ void APickupActorBase::NotifyActorEndOverlap(AActor* OtherActor)
 	AMyProjectGameMode* gm = Cast<AMyProjectGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	gm->HideInteractionWidget();
 
-	bInteractionAllowed = true;
+	bInteractionAllowed = false;
+
+	//**TMP until better solution is found*
+	AMyProjectCharacter* MyChar = Cast<AMyProjectCharacter>(OtherActor);
+	if (MyChar)
+	{
+		MyChar->CurrentInteractibleReference = nullptr;
+	}
+	
 }
 
 void APickupActorBase::ChangeItem()
@@ -77,6 +95,7 @@ void APickupActorBase::ChangeItem()
 }
 
 /** If Itemchanged  assign Mesh,Material and Properties dynamically*/
+/** Atm this is done in Blueprint via the ConstructionScript*/
 void APickupActorBase::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);

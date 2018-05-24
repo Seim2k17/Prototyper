@@ -58,6 +58,7 @@ void AHazardBaseActor::Tick(float DeltaTime)
 
 }
 
+//**Register Overlap and HitEvents due specified CollisionProfile (need to add in Projectssettings)*/
 void AHazardBaseActor::CheckTrigger()
 {
 	TArray<USceneComponent*> Comps;

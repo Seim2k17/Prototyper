@@ -36,12 +36,16 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
 
-
+	//**Current Interactible available to the Player*
+	UPROPERTY(BlueprintReadOnly, Category = "Interactibles")
+	AActor* CurrentInteractibleReference;
 	//why no see ?
 // 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 // 	UHealthComponent* HealthComp;
 
 	/** METHODS */
+// 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Events")
+// 	void Interact();
 
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

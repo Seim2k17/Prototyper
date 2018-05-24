@@ -12,8 +12,6 @@ class UBoxComponent;
 class UDataTable;
 class UWidget;
 
-
-
 UCLASS()
 class MYPROJECT_API APickupActorBase : public AActor
 {
@@ -45,7 +43,9 @@ public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly, Category = "Item")
 	EItems Itemname;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Item")
 	bool bInteractionAllowed;
+
 
 protected:
 

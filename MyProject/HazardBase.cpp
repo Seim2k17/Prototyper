@@ -1,4 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
+/**OUTDATED CLASS*/
+
 
 #include "HazardBase.h"
 #include "Components/StaticMeshComponent.h"

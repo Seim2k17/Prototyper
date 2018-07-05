@@ -36,6 +36,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnCharacterDiedSignature OnCharacterDied;
 
+	UFUNCTION(BlueprintCallable, Category = "HealthComponent")
+	void Heal(float HealAmount);
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

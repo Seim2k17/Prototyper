@@ -32,9 +32,13 @@ public:
 
 	UPROPERTY(EditAnywhere, NoClear, BlueprintReadOnly, Category = Classes)
 	TSubclassOf<class UUserWidget> IAWidgetClass;
-
-
+	
 	UUserWidget* InteractionHUD;
+
+	UPROPERTY(EditAnywhere, NoClear, BlueprintReadOnly, Category = Classes)
+	TSubclassOf<class UUserWidget> InventoryWidgetClass;
+
+	//InventoryRef in MyProjectCharacter !
 
 	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Events")
 	FOnOverlapPickupSignature OnOverlapItem;

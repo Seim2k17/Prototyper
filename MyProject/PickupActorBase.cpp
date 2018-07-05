@@ -42,6 +42,8 @@ void APickupActorBase::NotifyActorBeginOverlap(AActor* OtherActor)
 	//make sure not to loose BP functionality
 	Super::NotifyActorBeginOverlap(OtherActor);
 
+	//@ToDo: show UI Stuff
+
 	AMyProjectGameMode* gm = Cast<AMyProjectGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	gm->ShowInteractionWidget();
 
@@ -54,7 +56,6 @@ void APickupActorBase::NotifyActorBeginOverlap(AActor* OtherActor)
 	{
 		MyChar->CurrentInteractibleReference = this;
 	}
-
 
 	//Get Data from Datatable (Name,Text:A, Text:B)
 
@@ -69,6 +70,8 @@ void APickupActorBase::NotifyActorEndOverlap(AActor* OtherActor)
 {
 	//make sure not to loose BP functionality
 	Super::NotifyActorEndOverlap(OtherActor);
+
+	//@ToDo: hide UI Stuff
 
 	AMyProjectGameMode* gm = Cast<AMyProjectGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	gm->HideInteractionWidget();

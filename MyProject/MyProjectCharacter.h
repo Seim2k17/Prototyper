@@ -43,14 +43,7 @@ public:
 // 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
 // 	UHealthComponent* HealthComp;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
-	UUserWidget* InventoryHUD;
-
 	/** METHODS */
-
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 // 	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Events")
 // 	void Interact();
 
@@ -59,16 +52,12 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-	
 protected:
 
 	/** MEMBERS */
 
 	
 	/** METHODS */
-
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
@@ -101,20 +90,6 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
 
-	UFUNCTION(BlueprintCallable, Category = "Zoom")
-	void CheckInventory();
-
-	UPROPERTY(EditDefaultsOnly, Category = "Player", meta = (ClampMin = 0.1f, ClampMax = 100.f))
-	float ZoomedInterpSpeed;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Player")
-	float ZoomedFOV;
-
-	/** Default Field of View set during BeginPlay */
-	float DefaultFOV;
-
-	bool bWantsToZoom;
-
 private:
 
 	/** MEMBERS */
@@ -122,6 +97,5 @@ private:
 
 	/** METHODS */
 	void InitializeCharacter();
-	
 };
 

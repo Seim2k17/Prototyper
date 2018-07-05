@@ -9,17 +9,12 @@
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Components/HealthComponent.h"
-#include "MyProjectGameMode.h"
-#include "Blueprint/UserWidget.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMyProjectCharacter
 
 AMyProjectCharacter::AMyProjectCharacter()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -35,16 +30,6 @@ AMyProjectCharacter::AMyProjectCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
-}
-
-void AMyProjectCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	float TargetFOV = bWantsToZoom ? ZoomedFOV : DefaultFOV;
-	float NewFOV = FMath::FInterpTo(FollowCamera->FieldOfView, TargetFOV, DeltaTime, ZoomedInterpSpeed);
-
-	FollowCamera->SetFieldOfView(NewFOV);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -74,38 +59,10 @@ void AMyProjectCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 
 	// VR headset functionality
 	PlayerInputComponent->BindAction("ResetVR", IE_Pressed, this, &AMyProjectCharacter::OnResetVR);
-	//PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &AMyProjectCharacter::CheckInventory);
+
+	//PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AMyProjectCharacter::Interact);
 }
 
-
-void AMyProjectCharacter::CheckInventory()
-{
-	if (InventoryHUD)
-	{
-		//when all Inventory is C++ then you can do this, but we need to get all Functionality in the EventGraph in the InventoryHUD.widget Class to C++ --> PITA !!!
-// 		if (InventoryHUD->GetVisibility() == ESlateVisibility::Hidden)
-// 		{
-// 			bWantsToZoom = true;
-// 			InventoryHUD->SetVisibility(ESlateVisibility::Visible);
-// 		}
-// 		else
-// 		{
-// 			bWantsToZoom = false;
-// 			InventoryHUD->SetVisibility(ESlateVisibility::Hidden);
-// 		}
-
-		if (!bWantsToZoom)
-		{
-			bWantsToZoom = true;
-		}
-		else
-		{
-			bWantsToZoom = false;
-		}
-
-	}
-
-}
 
 void AMyProjectCharacter::InitializeCharacter()
 {
@@ -133,35 +90,6 @@ void AMyProjectCharacter::InitializeCharacter()
 
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	ZoomedFOV = 65.f;
-	ZoomedInterpSpeed = 20;
-
-}
-
-void AMyProjectCharacter::BeginPlay()
-{
-	/** Don´t forget this EVER !*/
-	Super::BeginPlay();
-
-
-	DefaultFOV = FollowCamera->FieldOfView;
-
-	/** ATM we use a BP Version !!!
-	//Reference CharacterInventoryHUD
-	AMyProjectGameMode* gm = Cast<AMyProjectGameMode>(GetWorld()->GetAuthGameMode());
-		if (gm)
-		{
-			if (gm->InventoryWidgetClass)
-			{
-				InventoryHUD = CreateWidget<UUserWidget>(GetWorld(), gm->InventoryWidgetClass);
-				if (InventoryHUD)
-				{
-					InventoryHUD->AddToViewport();
-					InventoryHUD->SetVisibility(ESlateVisibility::Hidden);
-				}
-			}
-		}
-	*/
 }
 
 void AMyProjectCharacter::OnResetVR()

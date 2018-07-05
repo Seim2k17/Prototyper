@@ -37,7 +37,7 @@ public:
 	float BaseLookUpRate;
 
 	//**Current Interactible available to the Player*
-	UPROPERTY(BlueprintReadOnly, Category = "Interactibles")
+	UPROPERTY(BlueprintReadWrite, Category = "Interactibles")
 	AActor* CurrentInteractibleReference;
 	//why no see ?
 // 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")

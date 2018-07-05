@@ -40,10 +40,10 @@ public:
 
 	//InventoryRef in MyProjectCharacter !
 
-	UPROPERTY(BlueprintAssignable, Category = "Events")
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Events")
 	FOnOverlapPickupSignature OnOverlapItem;
 
-	UPROPERTY(BlueprintAssignable, Category = "Events")
+	UPROPERTY(BlueprintAssignable, BlueprintCallable, Category = "Events")
 	FOnOverlapHotspotSignature OnOverlapHotspot;
 
 };

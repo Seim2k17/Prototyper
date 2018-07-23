@@ -11,6 +11,10 @@
 #include "Components/HealthComponent.h"
 #include "MyProjectGameMode.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/MyCharacterMovementComponent.h"
+
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // AMyProjectCharacter
@@ -35,6 +39,36 @@ AMyProjectCharacter::AMyProjectCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+}
+
+
+AMyProjectCharacter::AMyProjectCharacter(const class FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UMyCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+{
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	// Create a camera boom (pulls in towards the player if there is a collision)
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+
+	// Create a follow camera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
+
+	InitializeCharacter();
+
+	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
+	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+}
+
+
+void AMyProjectCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	MovementComp = Cast<UMyCharacterMovementComponent>(GetCharacterMovement());
+
 }
 
 void AMyProjectCharacter::Tick(float DeltaTime)

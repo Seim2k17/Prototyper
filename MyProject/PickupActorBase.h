@@ -70,6 +70,8 @@ private:
 
 	const FString ItemDataTablePath = "DataTable'/Game/Ui/Inventory/DT_PickupTable.DT_PickupTable'";
 	
+
+
 	/**METHODS*/
 
 	/**MEMBER*/

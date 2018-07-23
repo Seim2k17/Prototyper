@@ -2,6 +2,7 @@
 
 #include "CharacterBase.h"
 #include "Components/HealthComponent.h"
+#include "Components/MyCharacterMovementComponent.h"
 
 
 // Sets default values
@@ -11,6 +12,12 @@ ACharacterBase::ACharacterBase()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//Health = 100.f;
+}
+
+ACharacterBase::ACharacterBase(const class FObjectInitializer& ObjectInitializer)
+: Super(ObjectInitializer.SetDefaultSubobjectClass<UMyCharacterMovementComponent>(ACharacter::CharacterMovementComponentName))
+{
+
 }
 
 // Called when the game starts or when spawned

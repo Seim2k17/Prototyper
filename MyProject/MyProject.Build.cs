@@ -8,6 +8,8 @@ public class MyProject : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay","UMG","Slate","SlateCore" });
-	}
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay","UMG","Slate","SlateCore", "ArticyRuntime"});
+
+        PublicIncludePaths.AddRange(new string[] { "ArticyRuntime/Public" });
+    }
 }

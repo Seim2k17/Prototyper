@@ -14,7 +14,12 @@ class MYPROJECT_API ACharacterBase : public ACharacter
 {
 	GENERATED_BODY()
 
+		
+
 public:
+
+	ACharacterBase(const class FObjectInitializer& ObjectInitializer);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Status")
 		float Health;
 

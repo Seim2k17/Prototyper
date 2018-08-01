@@ -9,6 +9,8 @@
 
 class UHealthComponent;
 class UMyCharacterMovementComponent;
+class UMyClimbTrackerComponent;
+class USphereComponent;
 
 UCLASS(config=Game)
 class AMyProjectCharacter : public ACharacterBase
@@ -36,6 +38,20 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	FName ClimbLedgeTagName;
+
+	FName ClimbLadderTagName;
+
+	USphereComponent* GetClimbingTrackerSphere();
+
+	void DrawDebugInfosOnScreen();
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void Interact();
+
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void SetMovementMode(EMyCharClimbingMode ClimbingState, EMyCharMovement MovementState);
 
 protected:
 
@@ -76,6 +92,17 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Zoom")
 	void CheckInventory();
 
+	//DONT FORGET THIS EVER (UFUNCTION) !!!!
+	UFUNCTION()
+	void ClimbingTrackerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	//DONT FORGET THIS EVER (UFUNCTION) !!!!
+	UFUNCTION()
+	void ClimbingTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void InteractCallback(EMyCharClimbingMode ClimbingModeToChange, EMyCharMovement MovementModeToChange);
+
 private:
 
 	/** METHODS */
@@ -115,10 +142,15 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Equipment")
 	UUserWidget* InventoryHUD;
 
-	/** METHODS */
 
-	
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UMyClimbTrackerComponent* ClimbTracker;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	bool bDebugMessagesActive;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	USphereComponent* ClimbingTrackerSphere;
 	
 protected:
 
@@ -133,6 +165,8 @@ protected:
 	float DefaultFOV;
 
 	bool bWantsToZoom;
+
+	float fDeltaSeconds;
 
 };
 

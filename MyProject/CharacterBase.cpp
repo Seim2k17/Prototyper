@@ -24,7 +24,7 @@ ACharacterBase::ACharacterBase(const class FObjectInitializer& ObjectInitializer
 void ACharacterBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
 // Called every frame
@@ -40,4 +40,3 @@ void ACharacterBase::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
-

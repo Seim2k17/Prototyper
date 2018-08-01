@@ -12,6 +12,10 @@
 #include "MyProjectGameMode.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/MyCharacterMovementComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/MyClimbTrackerComponent.h"
+#include "MyProjectGameMode.h"
+#include "MyClimbingActorBase.h"
 
 
 
@@ -56,6 +60,11 @@ AMyProjectCharacter::AMyProjectCharacter(const class FObjectInitializer& ObjectI
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 
+	ClimbingTrackerSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ClimbingTracker"));
+	ClimbingTrackerSphere->SetupAttachment(RootComponent);
+
+	ClimbTracker = CreateDefaultSubobject<UMyClimbTrackerComponent>(TEXT("ClimbTrackerComponent"));
+
 	InitializeCharacter();
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
@@ -73,13 +82,32 @@ void AMyProjectCharacter::PostInitializeComponents()
 
 void AMyProjectCharacter::Tick(float DeltaTime)
 {
+
 	Super::Tick(DeltaTime);
+
+	fDeltaSeconds = DeltaTime;
+
+	if (bDebugMessagesActive)
+	{
+		DrawDebugInfosOnScreen();
+	}
+
 
 	float TargetFOV = bWantsToZoom ? ZoomedFOV : DefaultFOV;
 	float NewFOV = FMath::FInterpTo(FollowCamera->FieldOfView, TargetFOV, DeltaTime, ZoomedInterpSpeed);
 
 	FollowCamera->SetFieldOfView(NewFOV);
+
+	
+
 }
+
+
+USphereComponent* AMyProjectCharacter::GetClimbingTrackerSphere()
+{
+	return ClimbingTrackerSphere;
+}
+
 
 //////////////////////////////////////////////////////////////////////////
 // Input
@@ -90,6 +118,8 @@ void AMyProjectCharacter::SetupPlayerInputComponent(class UInputComponent* Playe
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &AMyProjectCharacter::Interact);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMyProjectCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMyProjectCharacter::MoveRight);
@@ -141,6 +171,7 @@ void AMyProjectCharacter::CheckInventory()
 
 }
 
+
 void AMyProjectCharacter::InitializeCharacter()
 {
 
@@ -170,6 +201,13 @@ void AMyProjectCharacter::InitializeCharacter()
 	ZoomedFOV = 65.f;
 	ZoomedInterpSpeed = 20;
 
+	ClimbingTrackerSphere->SetSphereRadius(150.0f);
+	ClimbingTrackerSphere->SetRelativeLocation(FVector(100, 0, 0));
+
+
+	ClimbLedgeTagName = "Ledge";
+	ClimbLadderTagName = "Ladder";
+
 }
 
 void AMyProjectCharacter::BeginPlay()
@@ -196,6 +234,104 @@ void AMyProjectCharacter::BeginPlay()
 			}
 		}
 	*/
+	ClimbingTrackerSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	ClimbingTrackerSphere->SetCollisionResponseToAllChannels(ECR_Overlap);
+	ClimbingTrackerSphere->OnComponentBeginOverlap.AddDynamic(this, &AMyProjectCharacter::ClimbingTrackerBeginOverlap);
+	ClimbingTrackerSphere->OnComponentEndOverlap.AddDynamic(this, &AMyProjectCharacter::ClimbingTrackerEndOverlap);
+
+
+	bDebugMessagesActive = true;
+
+
+}
+
+
+//ClimbingTrackerStuff
+void AMyProjectCharacter::ClimbingTrackerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	FName ClimbTagName;
+	ClimbTagName = "NONAME";
+	
+	AMyClimbingActorBase* MyCA = Cast<AMyClimbingActorBase>(OtherActor);
+	
+	if (MyCA)
+	{
+		if (OtherComp->ComponentTags.Num() > 0)
+		{
+			if (OtherComp->ComponentTags[0] == ClimbLedgeTagName)
+			{
+				ClimbTagName = ClimbLedgeTagName;
+				ClimbingMode = EMyCharClimbingMode::CANGRABLEDGE;
+			}
+			if (OtherComp->ComponentTags[0] == ClimbLadderTagName)
+			{
+				ClimbTagName = ClimbLadderTagName;
+				ClimbingMode = EMyCharClimbingMode::CANGRABLADDER;
+			}
+			UE_LOG(LogTemp, Log, TEXT("Overlap in: %s, its a %s"), *OtherActor->GetName(), *ClimbTagName.ToString());
+		}
+	}
+	
+
+	AMyProjectGameMode* MyGm = Cast<AMyProjectGameMode>(GetWorld()->GetAuthGameMode());
+	MyGm->ShowInteractionWidget();
+	
+	CurrentInteractibleReference = OtherActor;
+
+	if (MyCA)
+	{
+		MyCA->OnClimbingAndMovementChanged.BindUFunction(this,FName("InteractCallback"));
+	}
+
+}
+
+void AMyProjectCharacter::ClimbingTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	UE_LOG(LogTemp, Log, TEXT("Overlap out: %s"), *OtherActor->GetName());
+	ClimbingMode = EMyCharClimbingMode::NONE ;
+
+	AMyProjectGameMode* MyGm = Cast<AMyProjectGameMode>(GetWorld()->GetAuthGameMode());
+	MyGm->HideInteractionWidget();
+
+	CurrentInteractibleReference = nullptr;
+}
+
+
+void AMyProjectCharacter::InteractCallback(EMyCharClimbingMode ClimbingModeToChange, EMyCharMovement MovementModeToChange)
+{
+	switch (ClimbingModeToChange)
+	{
+	case EMyCharClimbingMode::NONE:
+		break;
+	case EMyCharClimbingMode::CANGRABLEDGE:
+		break;
+	case EMyCharClimbingMode::CANGRABLADDER:
+		break;
+	case EMyCharClimbingMode::CANGRABLEDGEANDLADDER:
+		break;
+	case EMyCharClimbingMode::ENTERLEDGE:
+		{
+			UE_LOG(LogTemp, Log, TEXT("I´m Climbing the ledge"));
+			//@ToDo: Add CustomMovementModeImplementations and Changes in the ABP !
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLEDGE));
+			break;
+		}
+		
+	case EMyCharClimbingMode::ENTERLADDER:
+		{
+			UE_LOG(LogTemp, Log, TEXT("I´m Climbing the ladder"));
+			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLADDER));
+			break;
+		}
+		
+	case EMyCharClimbingMode::IDLELEDGE:
+		break;
+	case EMyCharClimbingMode::IDLELADDER:
+		break;
+	default:
+		break;
+	}
+	
 }
 
 void AMyProjectCharacter::OnResetVR()
@@ -227,29 +363,136 @@ void AMyProjectCharacter::LookUpAtRate(float Rate)
 
 void AMyProjectCharacter::MoveForward(float Value)
 {
-	if ((Controller != NULL) && (Value != 0.0f))
-	{
-		// find out which way is forward
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
 
-		// get forward vector
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
+	switch (MovementMode)
+	{
+	case EMyCharMovement::CLIMB:
+		//@ToDo: CheckClimb Back/Foward
+		break;
+	default:
+		if ((Controller != NULL) && (Value != 0.0f))
+		{
+			// find out which way is forward
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			// get forward vector
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+			AddMovementInput(Direction, Value);
+		}
+		break;
 	}
+	
 }
 
 void AMyProjectCharacter::MoveRight(float Value)
 {
-	if ( (Controller != NULL) && (Value != 0.0f) )
+	switch (MovementMode)
 	{
-		// find out which way is right
-		const FRotator Rotation = Controller->GetControlRotation();
-		const FRotator YawRotation(0, Rotation.Yaw, 0);
-	
-		// get right vector 
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		// add movement in that direction
-		AddMovementInput(Direction, Value);
+	case EMyCharMovement::CLIMB:
+		//@ToDo: CheckClimb Left/Right
+		break;
+	default:
+		if ((Controller != NULL) && (Value != 0.0f))
+		{
+			// find out which way is right
+			const FRotator Rotation = Controller->GetControlRotation();
+			const FRotator YawRotation(0, Rotation.Yaw, 0);
+
+			// get right vector 
+			const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+			// add movement in that direction
+			AddMovementInput(Direction, Value);
+		}
+		break;
 	}
+
+}
+
+void AMyProjectCharacter::DrawDebugInfosOnScreen()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.000f, FColor::Green, FString::Printf(TEXT("Hm: %s"), true ? TEXT("true") : TEXT("false"), false));
+	}
+
+	FString MoveMode;
+	FString ClimbMode;
+
+	switch (MovementMode)
+	{
+	case EMyCharMovement::STAND:
+		MoveMode = "IDLE";
+		break;
+	case EMyCharMovement::WALK:
+		MoveMode = "Walking";
+		break;
+	case EMyCharMovement::CLIMB:
+		MoveMode = "ClimbingMode";
+		break;
+	case EMyCharMovement::CROUCH:
+		MoveMode = "Crouching";
+		break;
+	case EMyCharMovement::RUN:
+		MoveMode = "Running";
+		break;
+	default:
+		MoveMode = "NOT_SET";
+		break;
+	}
+
+	switch (ClimbingMode)
+	{
+	case EMyCharClimbingMode::CANGRABLADDER:
+		ClimbMode = "CanGrabLadder";
+		break;
+	case EMyCharClimbingMode::CANGRABLEDGE:
+		ClimbMode = "CanGrabLedge";
+		break;
+	case EMyCharClimbingMode::CANGRABLEDGEANDLADDER:
+		ClimbMode = "CanGrabLadderAndLedge";
+		break;
+	case EMyCharClimbingMode::ENTERLADDER:
+		ClimbMode = "EnterLadder";
+		break;
+	case EMyCharClimbingMode::ENTERLEDGE:
+		ClimbMode = "EnterLedge";
+		break;
+	case EMyCharClimbingMode::IDLELADDER:
+		ClimbMode = "IdleLadder";
+		break;
+	case EMyCharClimbingMode::IDLELEDGE:
+		ClimbMode = "IdleLedge";
+		break;
+	case EMyCharClimbingMode::NONE:
+		ClimbMode = "INACTIVE";
+		break;
+	default:
+		ClimbMode = "NOT_SET";
+		break;
+	}
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 0.000f, FColor::Red, FString::Printf(TEXT("MovementMode: %s"), *MoveMode), false);
+		GEngine->AddOnScreenDebugMessage(-1, 0.000f, FColor::Red, FString::Printf(TEXT("ClimbingMode: %s"), *ClimbMode), false);
+	}
+	
+}
+
+void AMyProjectCharacter::Interact()
+{
+	if (CurrentInteractibleReference)
+	{
+		AMyClimbingActorBase* MyRef = Cast<AMyClimbingActorBase>(CurrentInteractibleReference);
+		if (MyRef)
+		{
+			MyRef->Interact();
+		}
+	}
+}
+
+void AMyProjectCharacter::SetMovementMode(EMyCharClimbingMode ClimbingState, EMyCharMovement MovementState)
+{
+	ClimbingMode = ClimbingState;
+	MovementMode = MovementState;
 }

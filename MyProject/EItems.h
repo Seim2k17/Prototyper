@@ -108,4 +108,6 @@ enum class EItems : uint8
 	i101_unnamed_Item UMETA(Displayname = "i101_unnamed_Item"),
 	i102_unnamed_Item UMETA(Displayname = "i102_unnamed_Item"),
 	TutorialDude UMETA(Displayname = "TutorialDude"),
+	Ledge UMETA(Displayname = "Ledge"),
+	Ladder UMETA(Displayname = "Ladder"),
 };

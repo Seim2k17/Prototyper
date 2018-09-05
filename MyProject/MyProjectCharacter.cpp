@@ -16,6 +16,7 @@
 #include "Components/MyClimbTrackerComponent.h"
 #include "MyProjectGameMode.h"
 #include "MyClimbingActorBase.h"
+#include "MyClimbingActorLadder.h"
 
 
 
@@ -63,9 +64,16 @@ AMyProjectCharacter::AMyProjectCharacter(const class FObjectInitializer& ObjectI
 	ClimbingTrackerSphere = CreateDefaultSubobject<USphereComponent>(TEXT("ClimbingTracker"));
 	ClimbingTrackerSphere->SetupAttachment(RootComponent);
 
+	HeadTracker = CreateDefaultSubobject<USphereComponent>(TEXT("HeadTracker"));
+	HeadTracker->SetupAttachment(RootComponent);
+	HeadTracker->SetSphereRadius(10);
+	HeadTracker->SetRelativeLocation(FVector(0, 0, -80));
+	
 	ClimbTracker = CreateDefaultSubobject<UMyClimbTrackerComponent>(TEXT("ClimbTrackerComponent"));
 
 	InitializeCharacter();
+
+	LadderClimbingMode = ELadderClimbingMode::none;
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
@@ -239,6 +247,9 @@ void AMyProjectCharacter::BeginPlay()
 	ClimbingTrackerSphere->OnComponentBeginOverlap.AddDynamic(this, &AMyProjectCharacter::ClimbingTrackerBeginOverlap);
 	ClimbingTrackerSphere->OnComponentEndOverlap.AddDynamic(this, &AMyProjectCharacter::ClimbingTrackerEndOverlap);
 
+	HeadTracker->OnComponentBeginOverlap.AddDynamic(this, &AMyProjectCharacter::HeadTrackerBeginOverlap);
+	HeadTracker->OnComponentEndOverlap.AddDynamic(this, &AMyProjectCharacter::HeadTrackerEndOverlap);
+
 
 	bDebugMessagesActive = true;
 
@@ -261,34 +272,42 @@ void AMyProjectCharacter::ClimbingTrackerBeginOverlap(UPrimitiveComponent* Overl
 			if (OtherComp->ComponentTags[0] == ClimbLedgeTagName)
 			{
 				ClimbTagName = ClimbLedgeTagName;
-				ClimbingMode = EMyCharClimbingMode::CANGRABLEDGE;
+				if (MovementMode != EMyCharMovement::CLIMB)
+				{
+					ClimbingMode = EMyCharClimbingMode::CANGRABLEDGE;
+				}
+				
 			}
 			if (OtherComp->ComponentTags[0] == ClimbLadderTagName)
 			{
 				ClimbTagName = ClimbLadderTagName;
-				ClimbingMode = EMyCharClimbingMode::CANGRABLADDER;
+				if (MovementMode != EMyCharMovement::CLIMB)
+				{
+					ClimbingMode = EMyCharClimbingMode::CANGRABLADDER;
+				}
 			}
 			UE_LOG(LogTemp, Log, TEXT("Overlap in: %s, its a %s"), *OtherActor->GetName(), *ClimbTagName.ToString());
 		}
 	}
-	
+
 
 	AMyProjectGameMode* MyGm = Cast<AMyProjectGameMode>(GetWorld()->GetAuthGameMode());
 	MyGm->ShowInteractionWidget();
-	
+
 	CurrentInteractibleReference = OtherActor;
 
 	if (MyCA)
 	{
-		MyCA->OnClimbingAndMovementChanged.BindUFunction(this,FName("InteractCallback"));
+		MyCA->OnClimbingAndMovementChanged.BindUFunction(this, FName("InteractCallback"));
 	}
 
 }
 
 void AMyProjectCharacter::ClimbingTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Log, TEXT("Overlap out: %s"), *OtherActor->GetName());
-	ClimbingMode = EMyCharClimbingMode::NONE ;
+	UE_LOG(LogTemp, Log, TEXT("ClimbingTrackerEndOverlap(): %s"), *OtherActor->GetName());
+	//ClimbingMode = EMyCharClimbingMode::NONE;
+	//ClimbingMode = EMyCharClimbingMode::EXITLADDERTOP;
 
 	AMyProjectGameMode* MyGm = Cast<AMyProjectGameMode>(GetWorld()->GetAuthGameMode());
 	MyGm->HideInteractionWidget();
@@ -296,6 +315,17 @@ void AMyProjectCharacter::ClimbingTrackerEndOverlap(UPrimitiveComponent* Overlap
 	CurrentInteractibleReference = nullptr;
 }
 
+
+void AMyProjectCharacter::HeadTrackerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult)
+{
+	UE_LOG(LogTemp, Log, TEXT("HeadTrackerBeginOverlap(): "));
+}
+
+
+void AMyProjectCharacter::HeadTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	UE_LOG(LogTemp, Log, TEXT("HeadTrackerEndOverlap(): "));
+}
 
 void AMyProjectCharacter::InteractCallback(EMyCharClimbingMode ClimbingModeToChange, EMyCharMovement MovementModeToChange)
 {
@@ -310,28 +340,42 @@ void AMyProjectCharacter::InteractCallback(EMyCharClimbingMode ClimbingModeToCha
 	case EMyCharClimbingMode::CANGRABLEDGEANDLADDER:
 		break;
 	case EMyCharClimbingMode::ENTERLEDGE:
-		{
-			UE_LOG(LogTemp, Log, TEXT("I´m Climbing the ledge"));
-			//@ToDo: Add CustomMovementModeImplementations and Changes in the ABP !
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLEDGE));
-			break;
-		}
-		
+	{
+		UE_LOG(LogTemp, Log, TEXT("InteractCallback(): I´m Climbing the ledge"));
+		//@ToDo: Add CustomMovementModeImplementations and Changes in the ABP !
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLEDGE));
+		break;
+	}
+
 	case EMyCharClimbingMode::ENTERLADDER:
-		{
-			UE_LOG(LogTemp, Log, TEXT("I´m Climbing the ladder"));
-			GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLADDER));
-			break;
-		}
-		
+	{
+		UE_LOG(LogTemp, Log, TEXT("InteractCallback(): I´m Climbing the ladder"));
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::ENTERLADDER));
+		break;
+	}
+
 	case EMyCharClimbingMode::IDLELEDGE:
 		break;
 	case EMyCharClimbingMode::IDLELADDER:
 		break;
+	case EMyCharClimbingMode::EXITLADDERTOP:
+	{
+		UE_LOG(LogTemp, Log, TEXT("InteractCallback(): I´m Exiting the ladder"));
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::EXITLADDERTOP));
+		break;
+	}
+		
+	case EMyCharClimbingMode::EXITLADDERBTM:
+	{
+		UE_LOG(LogTemp, Log, TEXT("InteractCallback(): I´m Exiting the ladder"));
+		GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Custom, static_cast<uint8>(EMyCharClimbingMode::EXITLADDERBTM));
+		break;
+	}
+		
 	default:
 		break;
 	}
-	
+
 }
 
 void AMyProjectCharacter::OnResetVR()
@@ -341,12 +385,12 @@ void AMyProjectCharacter::OnResetVR()
 
 void AMyProjectCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		Jump();
+	Jump();
 }
 
 void AMyProjectCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector Location)
 {
-		StopJumping();
+	StopJumping();
 }
 
 void AMyProjectCharacter::TurnAtRate(float Rate)
@@ -363,12 +407,40 @@ void AMyProjectCharacter::LookUpAtRate(float Rate)
 
 void AMyProjectCharacter::MoveForward(float Value)
 {
-
 	switch (MovementMode)
 	{
 	case EMyCharMovement::CLIMB:
-		//@ToDo: CheckClimb Back/Foward
+		if ((ClimbingMode != EMyCharClimbingMode::ENTERLADDER) &&
+			(ClimbingMode != EMyCharClimbingMode::ENTERLEDGE) &&
+			(ClimbingMode != EMyCharClimbingMode::EXITLADDERTOP) &&
+			(ClimbingMode != EMyCharClimbingMode::EXITLADDERBTM))
+		{
+
+
+			UE_LOG(LogTemp, Log, TEXT("ClimbingLadder"))
+			if (Value > 0)
+			{
+				ClimbingMode = EMyCharClimbingMode::CLIMBUPLADDER;
+				//@ToDo: CheckClimb Back/Foward
+				//UE_LOG(LogTemp, Log, TEXT("ClimbingUpLadder"));
+			}
+			if (Value == 0)
+			{
+				if ((ClimbingMode == EMyCharClimbingMode::CLIMBUPLADDER) || (ClimbingMode == EMyCharClimbingMode::CLIMBDOWNLADDER))
+				{
+					ClimbingMode = EMyCharClimbingMode::IDLELADDER;
+				}
+				//UE_LOG(LogTemp, Log, TEXT("IDLE-Ladder"));
+			}
+			if (Value < 0)
+			{
+				ClimbingMode = EMyCharClimbingMode::CLIMBDOWNLADDER;
+				//UE_LOG(LogTemp, Log, TEXT("ClimbingDownLadder"));
+			}
+		}
 		break;
+		
+		
 	default:
 		if ((Controller != NULL) && (Value != 0.0f))
 		{
@@ -464,8 +536,17 @@ void AMyProjectCharacter::DrawDebugInfosOnScreen()
 	case EMyCharClimbingMode::IDLELEDGE:
 		ClimbMode = "IdleLedge";
 		break;
+	case EMyCharClimbingMode::CLIMBUPLADDER:
+		ClimbMode = "ClimbUpLadder";
+		break;
+	case EMyCharClimbingMode::CLIMBDOWNLADDER:
+		ClimbMode = "ClimbDownLadder";
+		break;
 	case EMyCharClimbingMode::NONE:
 		ClimbMode = "INACTIVE";
+		break;
+	case EMyCharClimbingMode::EXITLADDERTOP:
+		ClimbMode = "EXITONTOP";
 		break;
 	default:
 		ClimbMode = "NOT_SET";
@@ -495,4 +576,26 @@ void AMyProjectCharacter::SetMovementMode(EMyCharClimbingMode ClimbingState, EMy
 {
 	ClimbingMode = ClimbingState;
 	MovementMode = MovementState;
+
+	//GetCharacterMovement()->SetMovementMode(MOVE_Custom, static_cast<uint8>(ClimbingMode));
+}
+
+void AMyProjectCharacter::SetLadderTopPosition()
+{
+
+	SetActorRotation(FRotator(0, GetActorRotation().Yaw, 0));
+	if (CurrentClimbableActor)
+	{
+		AMyClimbingActorLadder* MyLadder = Cast<AMyClimbingActorLadder>(CurrentClimbableActor);
+		FVector LadderExit = MyLadder->TargetPointExitTop->GetComponentLocation();
+		LadderExit.Z = LadderExit.Z + MyLadder->DistanceHandsToTop;
+		SetActorLocation(LadderExit);
+	}
+	
+
+}
+
+void AMyProjectCharacter::SetCurrentClimbingActor(AMyClimbingActorBase* ClimbActor)
+{
+	CurrentClimbableActor = ClimbActor;
 }

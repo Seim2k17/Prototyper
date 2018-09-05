@@ -4,6 +4,8 @@
 #include "Components/BoxComponent.h"
 #include "Components/MeshComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/ChildActorComponent.h"
+#include "Components/ArrowComponent.h"
 
 
 // Sets default values
@@ -20,6 +22,12 @@ AMyClimbingActorBase::AMyClimbingActorBase()
 	
 	ClimbingMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ClimbableMesh"));
 	ClimbingMesh->SetupAttachment(SceneRoot);
+
+	EnterPosition = CreateDefaultSubobject<UChildActorComponent>(TEXT("EnterPosition"));
+	EnterPosition->SetupAttachment(SceneRoot);
+
+	DirectionArrow = CreateDefaultSubobject<UArrowComponent>(TEXT("DirectionArrow"));
+	DirectionArrow->SetupAttachment(SceneRoot);
 
 }
 

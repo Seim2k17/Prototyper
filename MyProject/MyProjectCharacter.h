@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "CharacterBase.h"
+#include "ELadderClimbingMode.h"
 #include "MyProjectCharacter.generated.h"
 
 class UHealthComponent;
@@ -53,6 +54,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void SetMovementMode(EMyCharClimbingMode ClimbingState, EMyCharMovement MovementState);
 
+	UFUNCTION(BlueprintCallable, Category = "Climbing")
+	void SetLadderTopPosition();
+
+	UFUNCTION(BlueprintCallable, Category = "Climbing")
+	void SetCurrentClimbingActor(AMyClimbingActorBase* ClimbActor);
+
+		
+
 protected:
 
 	// Called when the game starts or when spawned
@@ -99,6 +108,12 @@ protected:
 	//DONT FORGET THIS EVER (UFUNCTION) !!!!
 	UFUNCTION()
 	void ClimbingTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void HeadTrackerBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult & SweepResult);
+
+	UFUNCTION()
+	void HeadTrackerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UFUNCTION()
 	void InteractCallback(EMyCharClimbingMode ClimbingModeToChange, EMyCharMovement MovementModeToChange);
@@ -151,6 +166,14 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Category = "Components")
 	USphereComponent* ClimbingTrackerSphere;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	USphereComponent* HeadTracker;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Climbing")
+	ELadderClimbingMode LadderClimbingMode;
+
+	
 	
 protected:
 
@@ -167,6 +190,10 @@ protected:
 	bool bWantsToZoom;
 
 	float fDeltaSeconds;
+
+private:
+
+	AMyClimbingActorBase* CurrentClimbableActor;
 
 };
 

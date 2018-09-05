@@ -31,5 +31,9 @@ protected:
 	virtual void PhysClimbingLedge(float deltaTime, int32 Iterations);
 	
 	virtual void PhysClimbingLadder(float deltaTime, int32 Iterations);
+
+private:
+
+	bool bDoThingsOnce;
 	
 };

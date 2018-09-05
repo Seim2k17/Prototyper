@@ -11,6 +11,8 @@
 
 class UStaticMeshComponent;
 class USceneComponent;
+class UChildActorComponent;
+class UArrowComponent;
 
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnClimbingAndMovementChangedSignature, EMyCharClimbingMode, ClimbingModeToChange, EMyCharMovement, MovementModeToChange);
 
@@ -46,6 +48,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Specs")
 	FName ClimbableTagName;
 
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UChildActorComponent* EnterPosition;
+
 	virtual bool CanMoveUp() const;
 
 	virtual bool CanMoveDown() const;
@@ -58,5 +63,8 @@ public:
 
 	UPROPERTY()
 	FOnClimbingAndMovementChangedSignature OnClimbingAndMovementChanged;
+
+	UPROPERTY(VisibleAnywhere, Category = "Components")
+	UArrowComponent* DirectionArrow;
 	
 };
